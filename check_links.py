@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -34,6 +35,16 @@ def check_links(base_url, links):
 
     return results
 
+def generate_output_file_name(base_url):
+    website_name = urlparse(base_url).hostname
+    version = 1
+
+    while True:
+        output_file = f"{website_name}_link_status_output_v{version}.xlsx"
+        if not os.path.exists(output_file):
+            return output_file
+        version += 1
+
 def main():
     # Get input URL from the user
     input_url = input("Enter the URL of the home page: ")
@@ -42,9 +53,8 @@ def main():
     if not input_url.startswith(('http://', 'https://')):
         input_url = 'http://' + input_url
 
-    # Get the website name for the output file
-    website_name = urlparse(input_url).hostname
-    output_file = f"{website_name}_link_status_output.xlsx"
+    # Get the output file name with version
+    output_file = generate_output_file_name(input_url)
 
     # Get all links from the home page
     all_links = get_all_links(input_url)
