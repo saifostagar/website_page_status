@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import pandas as pd
 
 def get_all_links(url):
@@ -11,6 +11,10 @@ def get_all_links(url):
     links = [a.get('href') for a in soup.find_all('a', href=True)]
     
     return links
+
+def is_internal_link(base_url, link):
+    # Check if the link is internal to the base URL
+    return urljoin(base_url, link).startswith(base_url)
 
 def check_links(base_url, links):
     results = []
@@ -24,7 +28,9 @@ def check_links(base_url, links):
         except requests.RequestException as e:
             status = str(e)
 
-        results.append({'Link': full_url, 'Status': status})
+        link_type = 'Internal' if is_internal_link(base_url, link) else 'External'
+
+        results.append({'Link': full_url, 'Status': status, 'Type': link_type})
 
     return results
 
@@ -36,6 +42,10 @@ def main():
     if not input_url.startswith(('http://', 'https://')):
         input_url = 'http://' + input_url
 
+    # Get the website name for the output file
+    website_name = urlparse(input_url).hostname
+    output_file = f"{website_name}_link_status_output.xlsx"
+
     # Get all links from the home page
     all_links = get_all_links(input_url)
 
@@ -46,9 +56,9 @@ def main():
     df = pd.DataFrame(link_results)
 
     # Save to Excel file
-    df.to_excel('link_status_output.xlsx', index=False)
+    df.to_excel(output_file, index=False)
 
-    print("Results saved to 'link_status_output.xlsx'.")
+    print(f"Results saved to '{output_file}'.")
 
 if __name__ == "__main__":
     main()
