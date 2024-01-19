@@ -10,7 +10,10 @@ def get_all_links(url, headers=None):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         # Extract all links from the page
-        links = [a.get('href') for a in soup.find_all(['a', 'img', 'link'], href=True)]
+        links = [(a.get('href'), 'Page') for a in soup.find_all('a', href=True)] + \
+                [(img.get('src'), 'Image') for img in soup.find_all('img', src=True)] + \
+                [(link.get('href'), 'Document') for link in soup.find_all('link', href=True)] + \
+                [(iframe.get('src'), 'Video') for iframe in soup.find_all('iframe', src=True)]
         return links
     except requests.RequestException as e:
         print(f"Error getting links from {url}: {str(e)}")
@@ -23,7 +26,7 @@ def is_internal_link(base_url, link):
 def check_links(base_url, links, headers=None):
     results = []
 
-    for link in links:
+    for link, link_type in links:
         full_url = urljoin(base_url, link)
         try:
             response = requests.get(full_url, headers=headers)
@@ -33,9 +36,9 @@ def check_links(base_url, links, headers=None):
             status = str(e)
             print(f"Error checking link: {full_url} - {status}")
 
-        link_type = 'Internal' if is_internal_link(base_url, link) else 'External'
+        link_source = 'Internal' if is_internal_link(base_url, link) else 'External'
 
-        results.append({'Link': full_url, 'Status': status, 'Type': link_type})
+        results.append({'Link': full_url, 'Status': status, 'Link Type': link_type, 'Source Type': link_source})
 
     return results
 
