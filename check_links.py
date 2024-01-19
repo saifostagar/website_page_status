@@ -10,7 +10,7 @@ def get_all_links(url, headers=None):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         # Extract all links from the page
-        links = [a.get('href') for a in soup.find_all('a', href=True)]
+        links = [a.get('href') for a in soup.find_all(['a', 'img', 'link'], href=True)]
         return links
     except requests.RequestException as e:
         print(f"Error getting links from {url}: {str(e)}")
@@ -39,17 +39,23 @@ def check_links(base_url, links, headers=None):
 
     return results
 
-def generate_output_file_name(base_url):
+def generate_output_file_name(base_url, script_dir):
     website_name = urlparse(base_url).hostname
     version = 1
 
     while True:
-        output_file = f"{website_name}_link_status_output_v{version}.xlsx"
+        output_folder = os.path.join(script_dir, 'Reports')
+        os.makedirs(output_folder, exist_ok=True)
+
+        output_file = os.path.join(output_folder, f"{website_name}_link_status_output_v{version}.xlsx")
         if not os.path.exists(output_file):
             return output_file
         version += 1
 
 def main():
+    # Get the directory where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
     # Get input URL from the user
     input_url = input("Enter the URL of the home page: ")
 
@@ -63,7 +69,7 @@ def main():
     }
 
     # Get the output file name with version
-    output_file = generate_output_file_name(input_url)
+    output_file = generate_output_file_name(input_url, script_dir)
 
     # Get all links from the home page
     all_links = get_all_links(input_url, headers=headers)
@@ -81,4 +87,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
